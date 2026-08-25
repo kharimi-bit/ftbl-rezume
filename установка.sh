@@ -125,8 +125,12 @@ EOF
 chmod +x /etc/cron.daily/ftbl-rezume-backup
 
 printf "\n\033[1;32m════ ГОТОВО ════\033[0m\n"
-echo "  Адрес:     ${DOMAIN:+https://$DOMAIN}${DOMAIN:-http://$(hostname -I | awk '{print $1}')}"
-echo "  Модерация: ${DOMAIN:+https://$DOMAIN}/admin"
+if [ -n "$DOMAIN" ]; then
+  echo "  Адрес:     https://$DOMAIN"
+else
+  echo "  Адрес:     http://$(hostname -I | awk '{print $1}')"
+fi
+echo "  Модерация: ${DOMAIN:+https://$DOMAIN}${DOMAIN:-http://$(hostname -I | awk '{print $1}')}/admin"
 if [ "$NEWPASS" = 1 ]; then
   echo "  Пароль:    $PASS"
   echo "  ↑ запиши сейчас, второй раз он не покажется"
