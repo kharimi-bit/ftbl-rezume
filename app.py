@@ -141,7 +141,7 @@ def landing():
     return view.page("Спортивное резюме — Футбологика", f"""
 <div class="hdr"><div class="hdr-in">
 <span class="mk"><i></i><i></i><i></i></span><b>Спортивное резюме</b>
-<div class="sp"><a class="btn btn-main" href="/new">Собрать резюме</a></div>
+<div class="sp"><a class="btn btn-ghost" href="https://futbologik.ru/" rel="noopener">Футбологика</a><a class="btn btn-main" href="/new">Собрать резюме</a></div>
 </div></div>
 <div class="wrap" style="max-width:760px">
 <h1 style="font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.12;margin:34px 0 14px">
@@ -175,8 +175,12 @@ def public(r, files, refs, owner):
     else:
         tools = ('<div class="tools">'
                  '<button class="btn btn-main" onclick="window.print()">Скачать PDF</button></div>')
+    podpis = ('<p class="noprint" style="text-align:center;margin:26px 0 40px;'
+              'font-size:.92rem;color:var(--muted)">Резюме собрано в сервисе '
+              '<a href="https://futbologik.ru/" rel="noopener">«Футбологики»</a>. '
+              'Своё — <a href="/new">за пятнадцать минут</a>.</p>')
     body = (f'<div class="wrap">{tools}'
-            f'{view.sheet(r, files, refs, photo_url(r))}</div>')
+            f'{view.sheet(r, files, refs, photo_url(r))}{podpis}</div>')
     return view.page(f'{r["fio"] or "Спортивное резюме"} — резюме', body)
 
 
