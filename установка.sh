@@ -130,7 +130,11 @@ if [ -n "$DOMAIN" ]; then
 else
   echo "  Адрес:     http://$(hostname -I | awk '{print $1}')"
 fi
-echo "  Модерация: ${DOMAIN:+https://$DOMAIN}${DOMAIN:-http://$(hostname -I | awk '{print $1}')}/admin"
+if [ -n "$DOMAIN" ]; then
+  echo "  Модерация: https://$DOMAIN/admin"
+else
+  echo "  Модерация: http://$(hostname -I | awk '{print $1}')/admin"
+fi
 if [ "$NEWPASS" = 1 ]; then
   echo "  Пароль:    $PASS"
   echo "  ↑ запиши сейчас, второй раз он не покажется"
