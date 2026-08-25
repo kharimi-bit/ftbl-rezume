@@ -49,7 +49,11 @@ def sheet(r, files, refs, photo_url):
 
     contacts = []
     if r["email"]:
-        contacts.append(f'<a href="mailto:{E(r["email"])}">{E(r["email"])}</a>')
+        # Ссылкой делаем только то, что похоже на почту: mailto: на «ываыа»
+        # выглядит поломкой, а не заботой.
+        m = "@" in r["email"] and "." in r["email"].split("@")[-1]
+        contacts.append(f'<a href="mailto:{E(r["email"])}">{E(r["email"])}</a>'
+                        if m else E(r["email"]))
     if r["phone"]:
         contacts.append(E(r["phone"]))
     if r["tg"]:

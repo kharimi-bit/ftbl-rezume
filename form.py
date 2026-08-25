@@ -6,16 +6,6 @@ from style import CSS
 E = H.escape
 
 FORM_CSS = """
-.hdr{background:var(--ink);color:#fff}
-.hdr-in{max-width:1360px;margin:0 auto;padding:16px 22px;display:flex;
-  align-items:center;gap:14px;flex-wrap:wrap}
-.hdr .mk{display:flex;gap:5px}
-.hdr .mk i{width:8px;height:8px;border-radius:50%;background:var(--mint)}
-.hdr .mk i:last-child{background:#fff}
-.hdr b{font-size:1.04rem;letter-spacing:.02em}
-.hdr .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.hdr small{color:var(--mint);font-size:.85rem}
-
 .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
   gap:30px;max-width:1360px;margin:0 auto;padding:26px 22px 80px;align-items:start}
 @media(max-width:1080px){.split{grid-template-columns:1fr}}
@@ -25,27 +15,25 @@ FORM_CSS = """
 .pane-h{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;
   color:var(--muted);font-weight:700;margin:0 0 10px}
 
-.card{background:#fff;border:2px solid var(--line);border-radius:16px;
-  padding:22px 24px;margin-bottom:16px}
-.card>h2{margin:0 0 4px;font-size:1.18rem}
-.card>p.hint{margin:0 0 16px;color:var(--muted);font-size:.9rem}
 .f{margin-bottom:14px}
 .f:last-child{margin-bottom:0}
 .f label{display:block;font-weight:700;font-size:.9rem;margin-bottom:5px}
-.f .sub{color:var(--muted);font-weight:400;font-size:.85rem}
+.f .sub{display:block;margin-top:5px;color:var(--muted);font-size:.84rem;line-height:1.35}
+.two .f{margin-bottom:0}
 input[type=text],input[type=email],input[type=tel],textarea,select{
   width:100%;padding:11px 14px;border:2px solid var(--line);border-radius:10px;
   font-family:inherit;font-size:.97rem;color:var(--ink);background:#fff;
   transition:border-color .15s}
 input:focus,textarea:focus{outline:none;border-color:var(--jade)}
 textarea{min-height:104px;resize:vertical;line-height:1.5}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  align-items:start;margin-bottom:14px}
 @media(max-width:620px){.two{grid-template-columns:1fr}}
 
 .drop{border:2px dashed var(--line);border-radius:12px;padding:18px;
   text-align:center;color:var(--muted);font-size:.92rem;background:var(--ground)}
 .drop input{display:none}
-.drop label{cursor:pointer;color:var(--jade);font-weight:700}
+.drop label{cursor:pointer;color:var(--jade);font-weight:700;display:inline}
 .flist{display:grid;gap:7px;margin-top:11px}
 .frow{display:flex;align-items:center;gap:10px;font-size:.9rem;
   border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:#fff}
@@ -66,14 +54,16 @@ textarea{min-height:104px;resize:vertical;line-height:1.5}
 
 
 def field(name, label, val, hint="", kind="text", ph=""):
-    sub = f' <span class="sub">{hint}</span>' if hint else ""
+    """Подсказка идёт под полем, а не рядом с меткой: в паре колонок
+       длинная подсказка ломала бы высоту метки и разъезжало выравнивание."""
+    sub = f'<span class="sub">{hint}</span>' if hint else ""
     if kind == "area":
         el = (f'<textarea name="{name}" id="{name}" placeholder="{E(ph)}">'
               f'{E(val or "")}</textarea>')
     else:
         el = (f'<input type="{kind}" name="{name}" id="{name}" '
               f'value="{E(val or "")}" placeholder="{E(ph)}">')
-    return f'<div class="f"><label for="{name}">{label}{sub}</label>{el}</div>'
+    return f'<div class="f"><label for="{name}">{label}</label>{el}{sub}</div>'
 
 
 def render(r, files, refs, saved=""):
@@ -138,9 +128,10 @@ def render(r, files, refs, saved=""):
 <div class="card">
 <h2>Кто вы</h2>
 <p class="hint">Это шапка резюме. Заполняется один раз и дальше не меняется.</p>
-<div class="f"><label>Фотография <span class="sub">портрет, лучше вертикальный</span></label>
+<div class="f"><label>Фотография</label>
 <div class="drop"><input type="file" name="photo" id="photo" accept="image/*">
-<label for="photo">Выбрать фотографию</label> — jpg, png или webp до 25 МБ</div>{photo}</div>
+<label for="photo">Выбрать фотографию</label> — jpg, png или webp до 25 МБ</div>
+<span class="sub">Портрет, лучше вертикальный: он встаёт в левую колонку резюме.</span>{photo}</div>
 {field("fio", "ФИО", g("fio"), ph="Фамилия Имя Отчество")}
 <div class="two">
 {field("born", "Дата рождения", g("born"), "возраст посчитаем сами", ph="23.08.2001")}

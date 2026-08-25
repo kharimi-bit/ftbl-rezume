@@ -53,7 +53,7 @@ img{max-width:100%;display:block}
 .row b{font-weight:700}
 .sub{padding:12px 22px;border-bottom:1px solid var(--line)}
 .sub:last-child{border-bottom:0}
-.sub h4{margin:0 0 7px;font-size:.86rem;color:var(--muted);font-weight:700;
+.sub h4{margin:0 0 8px;font-size:.86rem;color:var(--muted);font-weight:700;
   letter-spacing:.04em;text-transform:uppercase}
 .sub ul{margin:0;padding-left:19px}
 .sub li{margin-bottom:5px;font-size:.95rem}
@@ -77,6 +77,21 @@ img{max-width:100%;display:block}
 .file:hover{border-color:var(--jade)}
 .file .k{font-size:.76rem;color:var(--muted);text-transform:uppercase;
   letter-spacing:.06em;margin-left:auto;white-space:nowrap}
+
+/* ─── шапка и карточки: нужны и анкете, и титульной ─── */
+.hdr{background:var(--ink);color:#fff}
+.hdr-in{max-width:1360px;margin:0 auto;padding:16px 22px;display:flex;
+  align-items:center;gap:14px;flex-wrap:wrap}
+.hdr .mk{display:flex;gap:5px;flex:none}
+.hdr .mk i{width:8px;height:8px;border-radius:50%;background:var(--mint)}
+.hdr .mk i:last-child{background:#fff}
+.hdr b{font-size:1.04rem;letter-spacing:.02em}
+.hdr .sp{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hdr small{color:var(--mint);font-size:.85rem}
+.card{background:#fff;border:2px solid var(--line);border-radius:16px;
+  padding:22px 24px;margin-bottom:16px}
+.card>h2{margin:0 0 4px;font-size:1.18rem}
+.card>p.hint{margin:0 0 16px;color:var(--muted);font-size:.9rem}
 
 /* ─── интерфейс вокруг листа ─── */
 .wrap{max-width:1080px;margin:0 auto;padding:26px 20px 70px}
