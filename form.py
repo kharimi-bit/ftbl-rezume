@@ -188,7 +188,7 @@ def render(r, files, refs, saved=""):
 
 <div class="card">
 <h2>Портфолио файлами</h2>
-<p class="hint">До 200 МБ на резюме. Документы, таблицы, презентации, изображения и видео.</p>
+<p class="hint">До 50 МБ на резюме. Документы, таблицы, презентации, изображения и видео.</p>
 <div class="drop"><input type="file" name="files" id="files" multiple>
 <label for="files">Выбрать файлы</label> — можно сразу несколько</div>
 <div class="flist">{flist}</div>

@@ -126,7 +126,7 @@ def store_files(con, r, files):
                     pass
         else:
             if core.total_size(con, r["id"]) + len(data) > core.MAX_TOTAL:
-                return "Портфолио превысило 200 МБ — уберите лишнее"
+                return "Портфолио превысило 50 МБ — уберите лишнее"
             with open(os.path.join(UPLOADS, stored), "wb") as fh:
                 fh.write(data)
             con.execute("INSERT INTO files(rezume_id,stored,orig,kind,size,added) "

@@ -25,7 +25,7 @@ ALLOWED = {
 }
 PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_FILE = 25 * 1024 * 1024      # 25 МБ на файл
-MAX_TOTAL = 200 * 1024 * 1024    # 200 МБ на резюме
+MAX_TOTAL = 50 * 1024 * 1024     # 50 МБ на резюме: на сервере 40 ГБ, и там же CRM
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS rezume(

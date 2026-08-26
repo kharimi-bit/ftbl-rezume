@@ -81,7 +81,7 @@ server {
     server_name $SRV;
 
     # Портфолио — файлы до 25 МБ, анкета целиком до 200
-    client_max_body_size 210m;
+    client_max_body_size 110m;
 
     location / {
         proxy_pass http://127.0.0.1:$PORT;
