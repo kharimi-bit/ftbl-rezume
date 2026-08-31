@@ -138,7 +138,7 @@ def store_files(con, r, files):
 
 # ─────────────────── страницы ───────────────────
 def landing():
-    return view.page("Спортивное резюме — Футбологика", f"""
+    return view.page("Спортивное резюме — Футбологика", schet=True, body=f"""
 <div class="hdr"><div class="hdr-in">
 <span class="mk"><i></i><i></i><i></i></span><b>Спортивное резюме</b>
 <div class="sp"><a class="btn btn-ghost" href="https://futbologik.ru/" rel="noopener">Футбологика</a><a class="btn btn-main" href="/new">Собрать резюме</a></div>
@@ -181,7 +181,8 @@ def public(r, files, refs, owner):
               'Своё — <a href="/new">за пятнадцать минут</a>.</p>')
     body = (f'<div class="wrap">{tools}'
             f'{view.sheet(r, files, refs, photo_url(r))}{podpis}</div>')
-    return view.page(f'{r["fio"] or "Спортивное резюме"} — резюме', body)
+    return view.page(f'{r["fio"] or "Спортивное резюме"} — резюме', body,
+                     schet=True, hit="rezume")
 
 
 def admin_page(con, msg=""):
@@ -308,9 +309,11 @@ class H(BaseHTTPRequestHandler):
                                      '<p class="note">Ссылка не подходит. Возможно, '
                                      'резюме удалено.</p></div>'), 404)
                 f, rf = kids(con, r["id"])
-                return self.send(view.page("Анкета резюме",
-                                           form.render(r, f, rf, qs.get("saved", "")),
-                                           form.FORM_CSS))
+                saved = qs.get("saved", "")
+                return self.send(view.page(
+                    "Анкета резюме", form.render(r, f, rf, saved), form.FORM_CSS,
+                    schet=True, hit="anketa",
+                    goal="rezume_gotovo" if saved.startswith("Отправлено") else None))
 
             if path.startswith("/r/"):
                 r = load(con, slug=path[3:].strip("/"))
@@ -385,6 +388,14 @@ class H(BaseHTTPRequestHandler):
                              "draft": "Снято с публикации"}[st]
                         return self.go("/admin?m=" + urllib.parse.quote(m))
                 return self.go("/admin")
+
+            if path.startswith("/schet/"):
+                kind = path[7:].strip("/")
+                if kind not in view.SCHET:
+                    return self.send("", 404, "text/plain; charset=utf-8")
+                cel = qs.get("c", "")
+                return self.send(view.schet_page(
+                    kind, cel if cel in view.CELI else None))
 
             if path == "/healthz":
                 return self.send("ok", 200, "text/plain; charset=utf-8")

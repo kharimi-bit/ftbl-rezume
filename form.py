@@ -208,7 +208,8 @@ def render(r, files, refs, saved=""):
   {"checked" if g("consent_pd") else ""}>
 <label for="consent_pd" style="font-weight:400">Даю согласие на обработку персональных
 данных, указанных в анкете. Данные хранятся на сервере в России и используются
-только для сборки резюме.</label></div>
+только для сборки резюме. Посещаемость страниц считает Яндекс.Метрика: она получает
+обезличенный адрес страницы и не получает того, что вы вводите в анкету.</label></div>
 <div class="bar-save">
 <button class="btn btn-main" type="submit">Сохранить</button>
 <span class="{"ok" if saved == "ok" else "err"}">{E(saved if saved != "ok" else "Сохранено")}</span>
