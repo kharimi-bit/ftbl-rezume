@@ -29,6 +29,13 @@ apt-get install -y -qq nginx ufw ca-certificates >/dev/null
 say "Готовлю каталоги"
 mkdir -p "$APP" "$DATA/uploads"
 cp -f ./*.py "$APP"/ 2>/dev/null || die "Запускать из папки с файлами сервиса"
+# Настройки приёма оплаты. Лежат рядом с исходниками, но в git их нет —
+# в них пароль терминала. Копируем отдельно и закрываем от посторонних:
+# служба работает из $APP и ищет файл именно там.
+if [ -f ./pay.json ]; then
+  cp -f ./pay.json "$APP"/pay.json
+  chmod 600 "$APP"/pay.json
+fi
 chown -R www-data:www-data "$DATA"
 chmod 750 "$DATA"
 
