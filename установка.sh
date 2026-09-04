@@ -34,6 +34,10 @@ cp -f ./*.py "$APP"/ 2>/dev/null || die "Запускать из папки с �
 # служба работает из $APP и ищет файл именно там.
 if [ -f ./pay.json ]; then
   cp -f ./pay.json "$APP"/pay.json
+  # Владельцем должен быть тот, под кем работает служба, иначе она
+  # не сможет прочитать собственные настройки. Права 600 оставляем:
+  # файл закрыт от всех, кроме неё и root.
+  chown www-data:www-data "$APP"/pay.json
   chmod 600 "$APP"/pay.json
 fi
 chown -R www-data:www-data "$DATA"
