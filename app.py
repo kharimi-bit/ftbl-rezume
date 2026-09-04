@@ -415,7 +415,7 @@ class H(BaseHTTPRequestHandler):
         if path == "/pay/":
             d, _ = self.read_form()
             url, err = pay.init(d.get("amount"), d.get("description"),
-                                d.get("name"), d.get("email"))
+                                d.get("name"), d.get("email"), d.get("kind"))
             if url:
                 return self.go(url)
             return self.send(view.page(

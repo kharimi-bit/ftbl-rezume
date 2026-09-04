@@ -38,6 +38,22 @@ API = "https://securepay.tinkoff.ru/v2/Init"
 # как открытый редирект на чужой сайт.
 BACK = "https://www.futbologik.ru"
 
+# Признак способа расчёта в чеке. Выбирает сам плательщик на странице.
+#
+# Так указала бухгалтер 02.09.2026: промежуточные платежи проходят как
+# предоплата, а закрывающий — как полный расчёт. До этого на любой платёж
+# уходила «предоплата 100 %», что для оплаты частями неверно.
+#
+# Важно: закрывающий чек с зачётом ранее внесённого аванса — отдельная
+# кассовая операция, страница её не делает. Здесь только правильный
+# признак на самом платеже.
+METHODS = {
+    "full":  "full_prepayment",   # вся сумма сразу
+    "part":  "prepayment",        # первый или промежуточный платёж
+    "final": "full_payment",      # окончательный платёж
+}
+DEFAULT_METHOD = "full"
+
 
 def settings():
     """Терминал и пароль. Пусто — приём оплаты выключен целиком."""
@@ -76,11 +92,10 @@ def token(payload, password):
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
 
 
-def receipt(s, email, name, amount_kop):
-    """Фискальный чек. Состав повторяет то, что настроено на терминале
-       в Tilda: система налогообложения, ставка НДС, признак предмета
-       и способа расчёта. Наименование — то, что плательщик написал
-       в назначении платежа."""
+def receipt(s, email, name, amount_kop, method):
+    """Фискальный чек. Система налогообложения и ставка НДС берутся
+       из настроек, признак способа расчёта — из выбора плательщика.
+       Наименование — то, что он написал в назначении платежа."""
     return {
         "Email": email,
         "Taxation": s["taxation"],
@@ -90,7 +105,7 @@ def receipt(s, email, name, amount_kop):
             "Quantity": 1,
             "Amount": amount_kop,
             "Tax": s["vat"],
-            "PaymentMethod": "full_prepayment",
+            "PaymentMethod": method,
             "PaymentObject": "service",
         }],
     }
@@ -102,7 +117,7 @@ def order_id():
     return "F" + os.urandom(8).hex()
 
 
-def init(amount_rub, description, name, email):
+def init(amount_rub, description, name, email, kind=None):
     """Создаёт платёж и возвращает (адрес формы Т-Банка, текст ошибки).
        Ровно одно из двух будет пустым."""
     s = settings()
@@ -125,6 +140,11 @@ def init(amount_rub, description, name, email):
         return "", "Укажите фамилию и имя."
     if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         return "", "Проверьте почту — на неё придёт чек."
+    # Неизвестное значение не принимаем молча: чек с чужого признака
+    # хуже отказа. Пусто — считаем оплатой целиком.
+    kind = (kind or DEFAULT_METHOD).strip()
+    if kind not in METHODS:
+        return "", "Не выбрано, какой это платёж."
 
     kop = amount * 100
     payload = {
@@ -139,7 +159,7 @@ def init(amount_rub, description, name, email):
     # DATA и Receipt добавляем ПОСЛЕ подписи: в неё они не входят.
     payload["DATA"] = {"Email": email, "Name": name}
     if s["receipt"]:
-        payload["Receipt"] = receipt(s, email, description, kop)
+        payload["Receipt"] = receipt(s, email, description, kop, METHODS[kind])
 
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
