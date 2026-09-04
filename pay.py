@@ -48,6 +48,12 @@ def settings():
         return None
     if not s.get("terminal") or not s.get("password"):
         return None
+    # Заглушка из pay.json.example — это «не настроено», а не пароль.
+    # Без этой проверки сервис бодро отвечает «настройки в порядке»,
+    # а банк потом отбивает платежи с «неверный токен», и полчаса
+    # уходит на поиск того, чего нет.
+    if "СЮДА" in s["password"] or "ПАРОЛЬ" in s["password"]:
+        return None
     s.setdefault("min", 500)
     s.setdefault("max", 300000)
     s.setdefault("taxation", "usn_income")
