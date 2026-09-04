@@ -8,7 +8,7 @@ import os, re, sys, html, sqlite3, secrets, argparse, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import core, view, form
+import core, view, form, pay
 from core import db, now, setting, set_setting, UPLOADS, ALLOWED, PHOTO_EXT
 from style import CSS
 
@@ -408,6 +408,28 @@ class H(BaseHTTPRequestHandler):
     # ── POST ──
     def do_POST(self):
         path, qs = self.q()
+
+        # Оплата приходит формой с futbologik.ru: браузер просто переходит
+        # сюда, поэтому ни JavaScript, ни разрешения между доменами
+        # не нужны. Обрабатываем до открытия базы — она здесь ни при чём.
+        if path == "/pay/":
+            d, _ = self.read_form()
+            url, err = pay.init(d.get("amount"), d.get("description"),
+                                d.get("name"), d.get("email"))
+            if url:
+                return self.go(url)
+            return self.send(view.page(
+                "Оплата не начата — Футбологика",
+                '<div class="wrap" style="max-width:560px">'
+                '<div class="card" style="background:#fff;border:2px solid var(--line);'
+                'border-radius:16px;padding:26px;margin-top:60px">'
+                '<h2 style="margin:0 0 12px;font-size:1.15rem">Платёж не начался</h2>'
+                f'<p class="note">{html.escape(err)}</p>'
+                '<p class="note">Вернитесь на страницу оплаты и попробуйте снова. '
+                'Если повторится — напишите нам, разберёмся.</p>'
+                f'<a class="btn btn-main" href="{pay.BACK}/oplata/schet/">Вернуться</a>'
+                '</div></div>'), 400)
+
         con = db()
         try:
             if path == "/save":

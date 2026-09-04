@@ -1,0 +1,9 @@
+{
+  "terminal": "1707816278493",
+  "password": "СЮДА-ПАРОЛЬ-ТЕРМИНАЛА-ИЗ-КАБИНЕТА-Т-БАНКА",
+  "min": 500,
+  "max": 300000,
+  "taxation": "usn_income",
+  "vat": "none",
+  "receipt": true
+}
