@@ -138,12 +138,24 @@ def init(amount_rub, description, name, email):
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
         API, data=body,
-        headers={"Content-Type": "application/json; charset=utf-8"})
+        headers={"Content-Type": "application/json; charset=utf-8",
+                 # Без своего имени запрос уходит как Python-urllib,
+                 # а такие защита банка нередко отбивает молча.
+                 "User-Agent": "ftbl-rezume/1.0 (+https://rezume.futbologik.ru)"})
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             answer = json.loads(resp.read().decode("utf-8", "replace"))
-    except (urllib.error.URLError, ValueError, OSError):
-        return "", "Банк не ответил. Попробуйте ещё раз через минуту."
+    except urllib.error.HTTPError as e:
+        # Банк ответил кодом ошибки. В теле обычно объяснение — читаем его,
+        # иначе останемся с бесполезным «банк не ответил».
+        try:
+            answer = json.loads(e.read().decode("utf-8", "replace"))
+        except Exception:
+            return "", f"Банк отклонил запрос, код {e.code}."
+    except urllib.error.URLError as e:
+        return "", f"Не удалось связаться с банком: {e.reason}"
+    except (ValueError, OSError) as e:
+        return "", f"Сбой при обращении к банку: {e}"
 
     if answer.get("Success") and answer.get("PaymentURL"):
         return answer["PaymentURL"], ""
