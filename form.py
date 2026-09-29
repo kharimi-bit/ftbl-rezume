@@ -12,6 +12,10 @@ FORM_CSS = """
 .pane{position:sticky;top:22px}
 @media(max-width:1080px){.pane{position:static}}
 .pane .sheet{box-shadow:0 1px 2px rgba(27,67,50,.06),0 14px 40px -20px rgba(27,67,50,.35)}
+.link-row{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.link-i{flex:1 1 260px;min-width:0;padding:11px 13px;font:inherit;font-size:.95rem;
+  color:var(--ink);background:var(--soft);border:2px solid var(--line);border-radius:10px}
+.link-row .btn{flex:none}
 .pane-h{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;
   color:var(--muted);font-weight:700;margin:0 0 10px}
 
@@ -100,6 +104,26 @@ def render(r, files, refs, saved=""):
         "published": "Опубликовано в разделе «Люди футбола»",
         "rejected": "Возвращено на доработку",
     }.get(g("status"), "")
+
+    # Ссылка, которую человек отправляет в клуб. Работает сразу, без
+    # модерации: раздел «Люди футбола» — это другое, туда по решению
+    # редакции. Ключ в ссылке только на просмотр, править по нему нельзя.
+    ssylka = f'https://rezume.futbologik.ru/r/{g("slug")}?k={g("share")}'
+    share_block = f'''<div class="card">
+<h2>Ссылка для клуба</h2>
+<p class="hint">Отправляйте её вместо файла — она всегда показывает свежую
+версию. Работает уже сейчас, ждать проверки не нужно.</p>
+<div class="link-row">
+<input class="link-i" id="share" type="text" readonly value="{E(ssylka)}"
+  onclick="this.select()">
+<button class="btn btn-ghost" type="button" onclick="
+  var i=document.getElementById('share'); i.select();
+  navigator.clipboard&&navigator.clipboard.writeText(i.value);
+  this.textContent='Скопировано';">Скопировать</button>
+</div>
+<p class="hint">Править анкету по ней нельзя — это ссылка только на просмотр.
+Ваша собственная, с правом правки, сейчас в адресной строке: её не отправляйте.</p>
+</div>'''
 
     pub_block = ""
     if g("status") in ("draft", "rejected"):
@@ -199,6 +223,8 @@ def render(r, files, refs, saved=""):
 <p class="hint">Чужое слово весит больше своего. До трёх рекомендаций.</p>
 {refs_html}
 </div>
+
+{share_block}
 
 {pub_block}
 

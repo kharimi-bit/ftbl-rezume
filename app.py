@@ -76,8 +76,11 @@ def photo_url(r):
 def create(con):
     tok = secrets.token_urlsafe(24)
     slug = "rezume-" + secrets.token_hex(4)
-    con.execute("INSERT INTO rezume(slug,token,created,updated) VALUES(?,?,?,?)",
-                (slug, tok, now(), now()))
+    # Два разных ключа. token даёт право править, share — только смотреть:
+    # именно его человек отправляет в клуб, не рискуя отдать свою анкету.
+    con.execute("INSERT INTO rezume(slug,token,share,created,updated) "
+                "VALUES(?,?,?,?,?)",
+                (slug, tok, secrets.token_urlsafe(12), now(), now()))
     con.commit()
     return tok
 
@@ -165,6 +168,12 @@ def landing():
 </div>""")
 
 
+def share_url(r):
+    """Ссылка, которую автор отправляет в клуб. Ключ только на просмотр:
+       по нему нельзя ни править анкету, ни попасть в список раздела."""
+    return f"rezume.futbologik.ru/r/{r['slug']}?k={r['share']}"
+
+
 def public(r, files, refs, owner):
     tools = ""
     if owner:
@@ -179,16 +188,16 @@ def public(r, files, refs, owner):
     # профиль, посторонний по этому адресу видит «скрыто» — об этом надо
     # сказать прямо, иначе человек решит, что ссылка сломана.
     poyasnenie = ""
-    if owner and r["status"] != "published":
-        poyasnenie = ('<p class="note">Так лист выглядит. Сейчас его видите '
-                      'только вы: посторонний по этому адресу увидит «резюме '
-                      'скрыто», пока редакция не опубликует профиль. Чтобы '
-                      'показать клубу прямо сейчас — «Скачать PDF».</p>')
-    elif owner:
-        poyasnenie = ('<p class="note">Ссылка для клуба — <b>rezume.futbologik.ru'
-                      f'/r/{E(r["slug"])}</b>, без хвоста после вопросительного '
-                      'знака. В адресной строке сейчас ваш ключ для правки — '
-                      'его отправлять не надо.</p>')
+    if owner:
+        gde = ("Профиль опубликован в «Людях футбола»."
+               if r["status"] == "published"
+               else "Заявка на профиль в «Людях футбола» — на проверке."
+               if r["status"] == "sent" else "")
+        poyasnenie = ('<p class="note">Ссылка для клуба: '
+                      f'<b>{E(share_url(r))}</b> — работает уже сейчас, '
+                      'открывается у любого, кому вы её отправите. '
+                      f'{gde} В адресной строке у вас сейчас другая ссылка, '
+                      'с ключом для правки — её отправлять не надо.</p>')
     podpis = ('<p class="noprint" style="text-align:center;margin:26px 0 40px;'
               'font-size:.92rem;color:var(--muted)">Резюме собрано в сервисе '
               '<a href="https://futbologik.ru/" rel="noopener">«Футбологики»</a>. '
@@ -335,9 +344,15 @@ class H(BaseHTTPRequestHandler):
                     return self.send(view.page("Не найдено", '<div class="wrap">'
                                      '<p class="note">Такого резюме нет.</p></div>'), 404)
                 owner = qs.get("t") == r["token"]
-                if r["status"] != "published" and not owner:
+                # Три разных случая. Опубликованное открыто всем — оно
+                # в «Людях футбола». Неопубликованное открывается по ключу:
+                # своим token автор, чужим share — тот, кому он сам отдал
+                # ссылку. Просто угадав адрес, чужую анкету не посмотреть:
+                # слаг собирается из имени и подбирается влёт.
+                po_klyuchu = bool(r["share"]) and qs.get("k") == r["share"]
+                if r["status"] != "published" and not owner and not po_klyuchu:
                     return self.send(view.page("Резюме скрыто", '<div class="wrap">'
-                                     '<p class="note">Это резюме ещё не опубликовано.'
+                                     '<p class="note">Ссылка неполная или резюме убрали. Попросите её заново у того, кто прислал.'
                                      '</p></div>'), 403)
                 f, rf = kids(con, r["id"])
                 return self.send(public(r, f, rf, owner))

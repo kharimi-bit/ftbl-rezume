@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS rezume(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   slug TEXT UNIQUE NOT NULL,
   token TEXT UNIQUE NOT NULL,
+  share TEXT DEFAULT '',
   created TEXT NOT NULL,
   updated TEXT NOT NULL,
   fio TEXT DEFAULT '', born TEXT DEFAULT '',
@@ -83,7 +84,24 @@ def db():
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
     con.executescript(SCHEMA)
+    migrate(con)
     return con
+
+
+def migrate(con):
+    """Колонка share появилась позже таблицы, поэтому CREATE TABLE её
+       не заводит — добавляем руками и раздаём ключи тем, кто заполнял
+       анкету раньше. Иначе у старых резюме ссылки для клуба не будет."""
+    est = {r["name"] for r in con.execute("PRAGMA table_info(rezume)")}
+    if "share" not in est:
+        con.execute("ALTER TABLE rezume ADD COLUMN share TEXT DEFAULT ''")
+    pustye = [r["id"] for r in con.execute(
+        "SELECT id FROM rezume WHERE share IS NULL OR share=''")]
+    for i in pustye:
+        con.execute("UPDATE rezume SET share=? WHERE id=?",
+                    (secrets.token_urlsafe(12), i))
+    if pustye:
+        con.commit()
 
 
 def setting(con, k, default=""):
