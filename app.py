@@ -8,7 +8,7 @@ import os, re, sys, html, sqlite3, secrets, argparse, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import core, view, form, pay
+import core, view, form, pay, notify
 from core import db, now, setting, set_setting, UPLOADS, ALLOWED, PHOTO_EXT
 from style import CSS
 
@@ -461,6 +461,9 @@ class H(BaseHTTPRequestHandler):
                     con.execute("UPDATE rezume SET status='sent', updated=? WHERE id=?",
                                 (now(), r["id"]))
                     con.commit()
+                    # Иначе о новой анкете никто не узнает, пока случайно
+                    # не откроет /admin.
+                    notify.na_proverku(r, self.headers.get("Host", "rezume.futbologik.ru"))
                     err = err or "Отправлено на проверку"
                 return self.go(f"/e/{r['token']}?saved=" +
                                urllib.parse.quote(err or "ok"))

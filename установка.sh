@@ -40,6 +40,12 @@ if [ -f ./pay.json ]; then
   chown www-data:www-data "$APP"/pay.json
   chmod 600 "$APP"/pay.json
 fi
+# Тем же порядком — настройки уведомлений: в них токен бота.
+if [ -f ./notify.json ]; then
+  cp -f ./notify.json "$APP"/notify.json
+  chown www-data:www-data "$APP"/notify.json
+  chmod 600 "$APP"/notify.json
+fi
 chown -R www-data:www-data "$DATA"
 chmod 750 "$DATA"
 
