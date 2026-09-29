@@ -106,6 +106,10 @@ img{max-width:100%;display:block}
 .btn-ghost:hover{border-color:var(--jade)}
 .btn-jade{background:var(--jade);color:#fff}
 .btn-jade:hover{background:#357a5b}
+.chip-ok,.chip-net{display:inline-block;padding:5px 12px;border-radius:999px;
+  font-size:.85rem;font-weight:700}
+.chip-ok{background:var(--soft);color:var(--jade)}
+.chip-net{background:#FBEAE5;color:#B4472F}
 .note{max-width:820px;margin:0 auto 18px;font-size:.88rem;color:var(--muted)}
 
 /* ─── печать: чистый A4 ─── */

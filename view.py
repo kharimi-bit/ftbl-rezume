@@ -173,6 +173,9 @@ def sheet(r, files, refs, photo_url):
         out.append('<div class="bar">Портфолио</div>'
                    f'<div class="block"><div class="files">{cards}</div></div>')
 
+    # Рекомендация без текста — это не рекомендация, а фамилия в пустых
+    # кавычках. Такие не печатаем: пусть лучше блока не будет.
+    refs = [x for x in refs if (x["text"] or "").strip()]
     if refs:
         out.append('<div class="bar">Рекомендации</div>')
         for x in refs:

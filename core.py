@@ -73,6 +73,39 @@ CREATE INDEX IF NOT EXISTS i_status ON rezume(status);
 """
 
 
+def norm_born(s):
+    """«24071994» и «24/07/1994» приводим к 24.07.1994. Человек вводит
+       дату как привык, а возраст должен посчитаться всё равно — иначе
+       в резюме остаётся строка «24071994» и лист выглядит небрежно."""
+    s = (s or "").strip()
+    cifry = re.sub(r"\D", "", s)
+    if len(cifry) == 8 and not re.fullmatch(r"\d{2}\.\d{2}\.\d{4}", s):
+        return "%s.%s.%s" % (cifry[:2], cifry[2:4], cifry[4:])
+    return s
+
+
+# По чему сверяем анкету с образцом. Порядок — по весу для клуба:
+# сначала то, из-за чего резюме вообще не откроют.
+PROVERKA = [
+    ("фото", lambda r, f, x: bool((r["photo"] or "").strip())),
+    ("опыт", lambda r, f, x: bool((r["work"] or "").strip())),
+    ("портфолио", lambda r, f, x: bool(f) or bool((r["links"] or "").strip())),
+    ("чем занимается", lambda r, f, x: any((r[k] or "").strip() for k in
+                                           ("act_coach", "act_analyst", "act_manage"))),
+    ("навыки", lambda r, f, x: bool((r["skills"] or "").strip())),
+    ("рекомендации", lambda r, f, x: any((i["text"] or "").strip() for i in x)),
+    ("дата рождения", lambda r, f, x: bool(re.fullmatch(
+        r"\d{2}\.\d{2}\.\d{4}", (r["born"] or "").strip()))),
+    ("контакты", lambda r, f, x: sum(bool((r[k] or "").strip())
+                                     for k in ("email", "phone", "tg")) >= 2),
+]
+
+
+def nedostaet(r, files, refs):
+    """Чего в анкете нет по сравнению с образцом. Пусто — собрано целиком."""
+    return [name for name, est in PROVERKA if not est(r, files, refs)]
+
+
 def now():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

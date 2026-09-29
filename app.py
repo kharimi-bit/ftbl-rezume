@@ -8,7 +8,7 @@ import os, re, sys, html, sqlite3, secrets, argparse, urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import core, view, form, pay, notify
+import core, view, form, pay, notify, obrazec
 from core import db, now, setting, set_setting, UPLOADS, ALLOWED, PHOTO_EXT
 from style import CSS
 
@@ -87,6 +87,7 @@ def create(con):
 
 def save_fields(con, r, d):
     vals = [d.get(k, "").strip() for k in FIELDS]
+    vals[FIELDS.index("born")] = core.norm_born(vals[FIELDS.index("born")])
     con.execute(f"UPDATE rezume SET {','.join(k+'=?' for k in FIELDS)}, "
                 "consent_pd=?, consent_pub=?, updated=? WHERE id=?",
                 vals + [1 if d.get("consent_pd") else 0,
@@ -208,6 +209,27 @@ def public(r, files, refs, owner):
                      schet=True, hit="rezume")
 
 
+def obrazec_page():
+    """Так выглядит анкета, заполненная целиком. Собирается той же
+       функцией, что и настоящие листы, — значит образец не разойдётся
+       с тем, что человек увидит у себя."""
+    shapka = (
+        '<div class="note" style="max-width:820px;margin:0 auto 18px;'
+        'background:var(--soft);border-radius:14px;padding:18px 22px;'
+        'color:var(--ink);font-size:.95rem;line-height:1.5">'
+        '<b>Образец.</b> Человек вымышленный, контакты и ссылки условные. '
+        'Смотрите не на текст, а на то, чего в нём нет пустого: фотография, '
+        'опыт с датами и цифрами, портфолио файлами, рекомендации с текстом. '
+        'Клуб открывает такой лист и видит работу, а не список намерений.'
+        '<div style="margin-top:12px"><a class="btn btn-main" href="/new">'
+        'Собрать своё</a></div></div>')
+    list_ = view.sheet(obrazec.LIST, obrazec.FAJLY, obrazec.REKOMENDACII,
+                       "/f/" + obrazec.LIST["photo"])
+    body = f'<div class="wrap">{shapka}{list_}</div>'
+
+    return view.page("Образец резюме — Футбологика", body, schet=True, hit="rezume")
+
+
 def admin_page(con, msg=""):
     rows = con.execute("SELECT * FROM rezume WHERE status IN ('sent','published') "
                        "ORDER BY CASE status WHEN 'sent' THEN 0 ELSE 1 END, updated DESC"
@@ -215,6 +237,13 @@ def admin_page(con, msg=""):
     items = ""
     for r in rows:
         badge = {"sent": "на проверке", "published": "опубликовано"}.get(r["status"], "")
+        # Сверка с образцом прямо в списке: решать «брать или вернуть»
+        # по одному и тому же набору, а не по настроению и не открывая
+        # каждую анкету глазами.
+        f_, rf_ = kids(con, r["id"])
+        net = core.nedostaet(r, f_, rf_)
+        svodka = ('<span class="chip-ok">собрано целиком</span>' if not net else
+                  '<span class="chip-net">нет: ' + E(", ".join(net)) + '</span>')
         act = ""
         if r["status"] == "sent":
             act = (f'<a class="btn btn-jade" href="/admin/act?id={r["id"]}&do=pub">Опубликовать</a> '
@@ -227,13 +256,16 @@ def admin_page(con, msg=""):
 <span class="note" style="margin:0">{E(r["city"] or "")} · {badge} · {E(r["updated"])}</span>
 <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
 <a class="btn btn-ghost" href="/r/{E(r["slug"])}?t={E(r["token"])}" target="_blank">Открыть</a>
-{act}</span></div></div>'''
+{act}</span></div>
+<div style="margin-top:10px">{svodka}</div></div>'''
     if not items:
         items = '<p class="note">Пока никто не просился в «Люди футбола».</p>'
     return view.page("Модерация резюме", f'''
 <div class="hdr"><div class="hdr-in">
 <span class="mk"><i></i><i></i><i></i></span><b>Модерация резюме</b></div></div>
 <div class="wrap" style="max-width:900px">
+<p class="note" style="margin:0 0 16px">Сверка с <a href="/obrazec" target="_blank">образцом</a>.
+Чего нет — написано под каждой анкетой.</p>
 {'<p class="ok" style="color:var(--jade);font-weight:700">' + E(msg) + '</p>' if msg else ''}
 {items}</div>''')
 
@@ -321,6 +353,9 @@ class H(BaseHTTPRequestHandler):
         try:
             if path == "/":
                 return self.send(landing())
+
+            if path == "/obrazec":
+                return self.send(obrazec_page())
 
             if path == "/new":
                 return self.go("/e/" + create(con))

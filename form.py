@@ -143,11 +143,20 @@ def render(r, files, refs, saved=""):
 <span class="mk"><i></i><i></i><i></i></span><b>Спортивное резюме</b>
 <div class="sp">
   {'<small>' + status_line + '</small>' if status_line else ''}
+  <a class="btn btn-ghost" href="/obrazec" target="_blank">Образец</a>
   <a class="btn btn-ghost" href="/r/{E(g("slug"))}?t={token}" target="_blank">Посмотреть лист</a>
 </div></div></div>
 
 <form class="split" method="post" action="/save?t={token}" enctype="multipart/form-data" id="f">
 <div>
+
+<div class="card">
+<h2>С чего начать</h2>
+<p class="hint">Откройте <a href="/obrazec" target="_blank">образец</a> — это
+заполненная анкета целиком. Клуб смотрит не на количество полей, а на то,
+есть ли в них работа: опыт с датами, портфолио файлами, рекомендации с текстом.
+Резюме без портфолио закрывают на первом экране.</p>
+</div>
 
 <div class="card">
 <h2>Кто вы</h2>
