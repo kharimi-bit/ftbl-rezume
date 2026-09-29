@@ -175,11 +175,25 @@ def public(r, files, refs, owner):
     else:
         tools = ('<div class="tools">'
                  '<button class="btn btn-main" onclick="window.print()">Скачать PDF</button></div>')
+    # Автор смотрит свой лист по ключу. Пока редакция не опубликовала
+    # профиль, посторонний по этому адресу видит «скрыто» — об этом надо
+    # сказать прямо, иначе человек решит, что ссылка сломана.
+    poyasnenie = ""
+    if owner and r["status"] != "published":
+        poyasnenie = ('<p class="note">Так лист выглядит. Сейчас его видите '
+                      'только вы: посторонний по этому адресу увидит «резюме '
+                      'скрыто», пока редакция не опубликует профиль. Чтобы '
+                      'показать клубу прямо сейчас — «Скачать PDF».</p>')
+    elif owner:
+        poyasnenie = ('<p class="note">Ссылка для клуба — <b>rezume.futbologik.ru'
+                      f'/r/{E(r["slug"])}</b>, без хвоста после вопросительного '
+                      'знака. В адресной строке сейчас ваш ключ для правки — '
+                      'его отправлять не надо.</p>')
     podpis = ('<p class="noprint" style="text-align:center;margin:26px 0 40px;'
               'font-size:.92rem;color:var(--muted)">Резюме собрано в сервисе '
               '<a href="https://futbologik.ru/" rel="noopener">«Футбологики»</a>. '
               'Своё — <a href="/new">за пятнадцать минут</a>.</p>')
-    body = (f'<div class="wrap">{tools}'
+    body = (f'<div class="wrap">{poyasnenie}{tools}'
             f'{view.sheet(r, files, refs, photo_url(r))}{podpis}</div>')
     return view.page(f'{r["fio"] or "Спортивное резюме"} — резюме', body,
                      schet=True, hit="rezume")

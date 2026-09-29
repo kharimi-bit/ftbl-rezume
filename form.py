@@ -119,7 +119,7 @@ def render(r, files, refs, saved=""):
 <span class="mk"><i></i><i></i><i></i></span><b>Спортивное резюме</b>
 <div class="sp">
   {'<small>' + status_line + '</small>' if status_line else ''}
-  <a class="btn btn-ghost" href="/r/{E(g("slug"))}" target="_blank">Посмотреть лист</a>
+  <a class="btn btn-ghost" href="/r/{E(g("slug"))}?t={token}" target="_blank">Посмотреть лист</a>
 </div></div></div>
 
 <form class="split" method="post" action="/save?t={token}" enctype="multipart/form-data" id="f">
