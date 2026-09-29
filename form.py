@@ -181,7 +181,7 @@ def render(r, files, refs, saved=""):
 <h2>Чем занимаетесь сейчас</h2>
 <p class="hint">Текущие роли. Каждая с новой строки — так они встанут списком.</p>
 {field("now_roles", "В настоящее время", g("now_roles"), kind="area",
-       ph="Аналитик МФК «2DROTS» Москва с августа 2024\\nСпортивный директор «2DROTS ACADEMY»")}
+       ph="Аналитик МФК «2DROTS» Москва с августа 2024\nСпортивный директор «2DROTS ACADEMY»")}
 </div>
 
 <div class="card">
