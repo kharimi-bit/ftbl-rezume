@@ -12,6 +12,12 @@ FORM_CSS = """
 .pane{position:sticky;top:22px}
 @media(max-width:1080px){.pane{position:static}}
 .pane .sheet{box-shadow:0 1px 2px rgba(27,67,50,.06),0 14px 40px -20px rgba(27,67,50,.35)}
+.pick{margin-top:11px;padding:13px 15px;border-radius:11px;
+  background:var(--soft);border:2px solid var(--mint);display:grid;gap:4px}
+.pick:empty{display:none}
+.pick b{color:var(--ink);font-size:.95rem;word-break:break-word}
+.pick span{color:var(--muted);font-size:.86rem}
+.pick .btn{justify-self:start;margin-top:5px}
 .link-row{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
 .link-i{flex:1 1 260px;min-width:0;padding:11px 13px;font:inherit;font-size:.95rem;
   color:var(--ink);background:var(--soft);border:2px solid var(--line);border-radius:10px}
@@ -164,6 +170,7 @@ def render(r, files, refs, saved=""):
 <div class="f"><label>Фотография</label>
 <div class="drop"><input type="file" name="photo" id="photo" accept="image/*">
 <label for="photo">Выбрать фотографию</label> — jpg, png или webp до 25 МБ</div>
+<div class="pick" id="pick-photo"></div>
 <span class="sub">Портрет, лучше вертикальный: он встаёт в левую колонку резюме.</span>{photo}</div>
 {field("fio", "ФИО", g("fio"), ph="Фамилия Имя Отчество")}
 <div class="two">
@@ -224,6 +231,7 @@ def render(r, files, refs, saved=""):
 <p class="hint">До 50 МБ на резюме. Документы, таблицы, презентации, изображения и видео.</p>
 <div class="drop"><input type="file" name="files" id="files" multiple>
 <label for="files">Выбрать файлы</label> — можно сразу несколько</div>
+<div class="pick" id="pick-files"></div>
 <div class="flist">{flist}</div>
 </div>
 
@@ -260,6 +268,28 @@ def render(r, files, refs, saved=""):
 </form>
 
 <script>
+// Поле выбора файла спрятано под подпись, и после выбора на экране
+// не менялось ничего — человек решал, что загрузка не работает.
+// Показываем, что выбрано, и говорим, что делать дальше.
+function pokazhi(vhod, kuda){{
+  var i = document.getElementById(vhod), box = document.getElementById(kuda);
+  if(!i || !box) return;
+  i.addEventListener("change", function(){{
+    if(!i.files || !i.files.length){{ box.innerHTML = ""; return; }}
+    var imena = [];
+    for(var k = 0; k < i.files.length; k++){{
+      imena.push(i.files[k].name + " · " +
+                 Math.max(1, Math.round(i.files[k].size / 1024)) + " КБ");
+    }}
+    box.innerHTML = '<b>Выбрано: ' + imena.join(", ") + '</b>' +
+      '<span>Файл пока на вашем устройстве. Нажмите «Сохранить» — ' +
+      'без этого он не загрузится.</span>' +
+      '<button class="btn btn-main" type="submit">Сохранить</button>';
+  }});
+}}
+pokazhi("photo", "pick-photo");
+pokazhi("files", "pick-files");
+
 const f = document.getElementById("f"), prev = document.getElementById("prev");
 let t = null;
 function draw(){{
