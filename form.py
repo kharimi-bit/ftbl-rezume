@@ -140,8 +140,9 @@ def render(r, files, refs, saved=""):
 <div class="consent"><input type="checkbox" name="consent_pub" id="consent_pub"
   {"checked" if g("consent_pub") else ""}>
 <label for="consent_pub" style="font-weight:400">Прошу опубликовать мой профиль
-в разделе «Люди футбола». Понимаю, что публикуются имя, город, направление
-и опыт; <b>телефон и почта не публикуются никогда</b> — связь идёт через форму.</label></div>
+в разделе «Люди футбола». Понимаю, что публикуются имя, фото, возраст, город,
+направление и опыт; <b>телефон, почта, дата рождения и гражданство не публикуются
+никогда</b> — клуб запрашивает контакты через редакцию.</label></div>
 <button class="btn btn-jade" name="send" value="1">Отправить на проверку</button>
 </div>'''
 

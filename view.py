@@ -97,40 +97,52 @@ def page(title, body, extra="", schet=False, hit=None, goal=None):
 </head><body>{body}{hvost}</body></html>"""
 
 
-def sheet(r, files, refs, photo_url):
+def sheet(r, files, refs, photo_url, full=True):
     """Сам лист. Пустые блоки не рисуются — резюме без судейского опыта
-       не должно показывать пустую строку «Судейский опыт»."""
+       не должно показывать пустую строку «Судейский опыт».
+
+       full=False — лист для всех. Публикуется то, на что человек дал
+       согласие: имя, фото, возраст, город, направление и опыт. Дата
+       рождения, гражданство и контакты видны только автору и тому, кому
+       он сам отдал ссылку с ключом. Остальным — запрос через редакцию."""
     a = age(r["born"])
     born = E(r["born"] or "")
     if a is not None:
         born += f" ({a} {plural(a, 'год', 'года', 'лет')})"
+    if not full:
+        born = f"{a} {plural(a, 'год', 'года', 'лет')}" if a is not None else ""
 
     facts = []
     for label, val in [
-        ("ФИО", r["fio"]), ("Дата рождения (возраст)", born),
-        ("Гражданство", r["citizenship"]), ("Место жительства", r["city"]),
+        ("ФИО", r["fio"]),
+        ("Дата рождения (возраст)" if full else "Возраст", born),
+        ("Гражданство", r["citizenship"] if full else ""), ("Место жительства", r["city"]),
         ("Лицензия", r["licence"]), ("Образование", r["edu"]),
         ("Учебное заведение", r["edu_place"]),
     ]:
         if (val or "").strip():
-            v = val if label == "Дата рождения (возраст)" else E(val)
+            v = val if label in ("Дата рождения (возраст)", "Возраст") else E(val)
             facts.append(f'<div class="fact"><dt>{label}</dt><dd>{v}</dd></div>')
 
     contacts = []
-    if r["email"]:
+    if full and r["email"]:
         # Ссылкой делаем только то, что похоже на почту: mailto: на «ываыа»
         # выглядит поломкой, а не заботой.
         m = "@" in r["email"] and "." in r["email"].split("@")[-1]
         contacts.append(f'<a href="mailto:{E(r["email"])}">{E(r["email"])}</a>'
                         if m else E(r["email"]))
-    if r["phone"]:
+    if full and r["phone"]:
         contacts.append(E(r["phone"]))
-    if r["tg"]:
+    if full and r["tg"]:
         t = r["tg"].lstrip("@")
         contacts.append(f'<a href="https://t.me/{E(t)}" rel="noopener">@{E(t)}</a>')
     if contacts:
         facts.append(f'<div class="fact"><dt>Контактные данные</dt>'
                      f'<dd>{" · ".join(contacts)}</dd></div>')
+    elif not full:
+        facts.append('<div class="fact"><dt>Контактные данные</dt>'
+                     f'<dd><a href="/zapros/{E(r["slug"])}" rel="nofollow">'
+                     'Запросить через редакцию</a></dd></div>')
 
     ph = (f'<img src="{E(photo_url)}" alt="">' if photo_url
           else '<div class="none">Фотография<br>не загружена</div>')

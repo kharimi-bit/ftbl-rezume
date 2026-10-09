@@ -175,7 +175,7 @@ def share_url(r):
     return f"rezume.futbologik.ru/r/{r['slug']}?k={r['share']}"
 
 
-def public(r, files, refs, owner):
+def public(r, files, refs, owner, full=True):
     tools = ""
     if owner:
         tools = (f'<div class="tools"><a class="btn btn-ghost" href="/e/{E(r["token"])}">'
@@ -204,7 +204,7 @@ def public(r, files, refs, owner):
               '<a href="https://futbologik.ru/" rel="noopener">«Футбологики»</a>. '
               'Своё — <a href="/new">за пятнадцать минут</a>.</p>')
     body = (f'<div class="wrap">{poyasnenie}{tools}'
-            f'{view.sheet(r, files, refs, photo_url(r))}{podpis}</div>')
+            f'{view.sheet(r, files, refs, photo_url(r), full)}{podpis}</div>')
     return view.page(f'{r["fio"] or "Спортивное резюме"} — резюме', body,
                      schet=True, hit="rezume")
 
@@ -267,7 +267,92 @@ def admin_page(con, msg=""):
 <p class="note" style="margin:0 0 16px">Сверка с <a href="/obrazec" target="_blank">образцом</a>.
 Чего нет — написано под каждой анкетой.</p>
 {'<p class="ok" style="color:var(--jade);font-weight:700">' + E(msg) + '</p>' if msg else ''}
-{items}</div>''')
+{items}{zaprosy_html(con)}</div>''')
+
+
+# Запрос контактов. Не больше пяти с одного адреса за час — иначе форма
+# станет каналом рассылки спама в наш Telegram.
+ZAPROS_LIMIT, ZAPROS_OKNO = 5, 3600
+_zapros_ip = {}
+
+
+def zapros_save(con, r, d, ip):
+    import time
+    t = time.time()
+    hist = [x for x in _zapros_ip.get(ip, []) if t - x < ZAPROS_OKNO]
+    if len(hist) >= ZAPROS_LIMIT:
+        return "Слишком много запросов. Попробуйте через час."
+    kto = (d.get("kto") or "").strip()[:200]
+    org = (d.get("org") or "").strip()[:200]
+    svyaz = (d.get("svyaz") or "").strip()[:200]
+    zachem = (d.get("zachem") or "").strip()[:1000]
+    if not kto or not org or not svyaz:
+        return "Заполните имя, клуб или организацию и способ связи."
+    if not d.get("soglasie"):
+        return "Без согласия на обработку данных запрос не отправить."
+    con.execute("INSERT INTO zapros(rezume_id,kto,org,svyaz,zachem,created) "
+                "VALUES(?,?,?,?,?,?)", (r["id"], kto, org, svyaz, zachem, now()))
+    con.commit()
+    hist.append(t)
+    _zapros_ip[ip] = hist
+    return ""
+
+
+def zapros_page(r, ok=False, err="", d=None):
+    d = d or {}
+    g = lambda k: E((d.get(k) or ""))
+    fio = E(r["fio"] or "кандидата")
+    if ok:
+        inner = (f'<h2 style="margin:0 0 12px;font-size:1.15rem">Запрос отправлен</h2>'
+                 f'<p class="note">Редакция «Футбологики» получила запрос на контакты: {fio}. '
+                 'Мы свяжемся с вами и, если кандидат не против, передадим контакты.</p>'
+                 f'<a class="btn btn-ghost" href="/r/{E(r["slug"])}">Вернуться к резюме</a>')
+    else:
+        inner = f'''<h2 style="margin:0 0 6px;font-size:1.15rem">Запросить контакты</h2>
+<p class="note" style="margin:0 0 16px">Кандидат: <b>{fio}</b>. Телефон и почту
+в открытом резюме не публикуем. Оставьте свои данные — редакция «Футбологики»
+свяжется с вами и с кандидатом.</p>
+{'<p class="note" style="color:var(--accent)">' + E(err) + '</p>' if err else ''}
+<form method="post" action="/zapros">
+<input type="hidden" name="slug" value="{E(r["slug"])}">
+<div style="position:absolute;left:-5000px" aria-hidden="true">
+<input type="text" name="sajt" tabindex="-1" autocomplete="off"></div>
+<label class="lbl">Ваше имя<input type="text" name="kto" maxlength="200" required value="{g("kto")}"></label>
+<label class="lbl">Клуб или организация, должность<input type="text" name="org" maxlength="200" required value="{g("org")}"></label>
+<label class="lbl">Как с вами связаться — телефон, Telegram или почта<input type="text" name="svyaz" maxlength="200" required value="{g("svyaz")}"></label>
+<label class="lbl">Комментарий, если нужен<textarea name="zachem" rows="3" maxlength="1000">{g("zachem")}</textarea></label>
+<div class="consent"><input type="checkbox" name="soglasie" id="soglasie" required>
+<label for="soglasie" style="font-weight:400">Даю согласие на обработку указанных данных,
+чтобы редакция связалась со мной по этому запросу.
+<a href="https://www.futbologik.ru/privacy/" target="_blank" rel="noopener">Политика конфиденциальности</a>.</label></div>
+<button class="btn btn-main" style="margin-top:14px">Отправить запрос</button>
+</form>'''
+    body = ('<div class="wrap" style="max-width:560px"><div class="card" style="background:#fff;'
+            'border:2px solid var(--line);border-radius:16px;padding:26px;margin-top:40px">'
+            f'{inner}</div></div>')
+    return view.page("Запрос контактов — Футбологика", body + ZAPROS_CSS)
+
+
+ZAPROS_CSS = """<style>
+.lbl{display:block;font-size:.92rem;color:var(--muted);margin:0 0 12px}
+.lbl input,.lbl textarea{display:block;width:100%;margin-top:5px;padding:10px 12px;
+ border:2px solid var(--line);border-radius:10px;font:inherit;color:var(--ink);background:#fff}
+</style>"""
+
+
+def zaprosy_html(con):
+    rows = con.execute("SELECT z.*, r.fio, r.slug FROM zapros z LEFT JOIN rezume r "
+                       "ON r.id=z.rezume_id ORDER BY z.id DESC LIMIT 30").fetchall()
+    if not rows:
+        return ""
+    li = "".join(
+        f'<div class="card" style="margin-bottom:10px"><b>{E(z["kto"])}</b>, {E(z["org"])} · '
+        f'<span class="note" style="margin:0">{E(z["created"])}</span><br>'
+        f'Связь: {E(z["svyaz"])}<br>Кандидат: <a href="/r/{E(z["slug"] or "")}" target="_blank">'
+        f'{E(z["fio"] or "—")}</a>'
+        + (f'<br><span class="note" style="margin:0">{E(z["zachem"])}</span>' if z["zachem"] else "")
+        + '</div>' for z in rows)
+    return f'<h2 style="font-size:1.1rem;margin:28px 0 12px">Запросы контактов</h2>{li}'
 
 
 def ask_pass(msg=""):
@@ -390,7 +475,16 @@ class H(BaseHTTPRequestHandler):
                                      '<p class="note">Ссылка неполная или резюме убрали. Попросите её заново у того, кто прислал.'
                                      '</p></div>'), 403)
                 f, rf = kids(con, r["id"])
-                return self.send(public(r, f, rf, owner))
+                # Контакты, дату рождения и гражданство видят автор и тот,
+                # кому он отдал ссылку с ключом. Остальные — запрос в редакцию.
+                return self.send(public(r, f, rf, owner, full=owner or po_klyuchu))
+
+            if path.startswith("/zapros/"):
+                r = load(con, slug=path[8:].strip("/"))
+                if not r or r["status"] != "published":
+                    return self.send(view.page("Не найдено", '<div class="wrap">'
+                                     '<p class="note">Такого резюме нет.</p></div>'), 404)
+                return self.send(zapros_page(r, ok=qs.get("ok") == "1"))
 
             if path.startswith("/f/"):
                 name = os.path.basename(path[3:])
@@ -496,6 +590,21 @@ class H(BaseHTTPRequestHandler):
 
         con = db()
         try:
+            if path == "/zapros":
+                d, _ = self.read_form()
+                r = load(con, slug=(d.get("slug") or "").strip())
+                if not r or r["status"] != "published":
+                    return self.send("нет", 404, "text/plain; charset=utf-8")
+                # Ловушка для ботов: поле «сайт» человек не видит и не заполняет.
+                if (d.get("sajt") or "").strip():
+                    return self.go(f"/zapros/{r['slug']}?ok=1")
+                err = zapros_save(con, r, d, self.client_address[0])
+                if err:
+                    return self.send(zapros_page(r, err=err, d=d), 400)
+                notify.zapros(r, d.get("kto"), d.get("org"),
+                              self.headers.get("Host", "rezume.futbologik.ru"))
+                return self.go(f"/zapros/{r['slug']}?ok=1")
+
             if path == "/save":
                 r = load(con, token=qs.get("t", ""))
                 if not r:

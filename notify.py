@@ -16,6 +16,7 @@
 Отправка идёт в отдельном потоке: если Telegram недоступен или тянет
 время, человек не должен ждать этого на кнопке «Отправить».
 """
+import html
 import json
 import os
 import threading
@@ -71,4 +72,19 @@ def na_proverku(r, host):
     text = ("📝 <b>Резюме на проверку</b>\n"
             f"{fio}" + (f" · {gorod}" if gorod else "") + "\n"
             f"https://{host}/admin")
+    threading.Thread(target=_send, args=(text,), daemon=True).start()
+
+
+def zapros(r, kto, org, host):
+    """Клуб запросил контакты кандидата. В Telegram — только кто и о ком.
+       Контакт запросившего лежит в базе на нашем сервере, виден в /admin."""
+    if not settings():
+        return
+    E = lambda x: html.escape((x or "").strip())
+    fio = E(r["fio"]) or "Без имени"
+    gorod = E(r["city"])
+    text = ("📩 <b>Запрос контактов</b>\n"
+            f"Кандидат: {fio}" + (f" · {gorod}" if gorod else "") + "\n"
+            f"От: {E(kto)}" + (f", {E(org)}" if org else "") + "\n"
+            f"Контакт запросившего — https://{host}/admin")
     threading.Thread(target=_send, args=(text,), daemon=True).start()
